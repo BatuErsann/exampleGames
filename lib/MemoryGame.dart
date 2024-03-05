@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ class MemoryGame extends StatefulWidget {
 
 class _MemoryGameState extends State<MemoryGame> {
   List<bool> flipped = List<bool>.filled(18, false);
+  List<bool> matched = List<bool>.filled(18, false);
   List<int> cardNumbers = List<int>.generate(18, (index) => index % 9);
   int firstIndex = -1;
   bool canFlip = true;
@@ -22,7 +24,7 @@ class _MemoryGameState extends State<MemoryGame> {
 
   void checkAllMatched() {
     setState(() {
-      allMatched = flipped.every((element) => element);
+      allMatched = matched.every((element) => element);
     });
   }
 
@@ -55,12 +57,14 @@ class _MemoryGameState extends State<MemoryGame> {
                             canFlip = false;
                             if (cardNumbers[firstIndex] == cardNumbers[index]) {
                               // Match found
+                              matched[firstIndex] = true;
+                              matched[index] = true;
                               firstIndex = -1;
                               canFlip = true;
                               checkAllMatched();
                             } else {
                               // No match
-                              Future.delayed(const Duration(seconds: 1), () {
+                              Timer(Duration(seconds: 1), () {
                                 setState(() {
                                   flipped[firstIndex] = false;
                                   flipped[index] = false;
@@ -74,19 +78,23 @@ class _MemoryGameState extends State<MemoryGame> {
                       },
                       child: Container(
                         margin: const EdgeInsets.all(4),
-                        color: flipped[index] ? Colors.white : Colors.blue,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: (flipped[index] && matched[index])
+                                ? Colors.green
+                                : (flipped[index] ? Colors.red : Colors.blue),
+                            width: 3,
+                          ),
+                        ),
                         child: Center(
                           child: flipped[index]
                               ? Image.asset(
                                   'assets/images/card${cardNumbers[index]}.png',
                                   fit: BoxFit.cover,
                                 )
-                              : const Text(
-                                  'Closed',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.black,
-                                  ),
+                              : Image.asset(
+                                  'assets/bayes.png',
+                                  fit: BoxFit.cover,
                                 ),
                         ),
                       ),
@@ -124,6 +132,7 @@ class _MemoryGameState extends State<MemoryGame> {
                             setState(() {
                               // Yeniden başlatmak için tüm değişkenleri sıfırla
                               flipped = List<bool>.filled(18, false);
+                              matched = List<bool>.filled(18, false);
                               cardNumbers.shuffle();
                               firstIndex = -1;
                               canFlip = true;

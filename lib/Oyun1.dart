@@ -1,88 +1,40 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 
 void main() {
-  runApp(PuzzleGame());
+  runApp(const MaterialApp(home: PuzzleGame()));
 }
 
-class PuzzleGame extends StatelessWidget {
+class PuzzleGame extends StatefulWidget {
+  const PuzzleGame({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Puzzle Game',
-      home: PuzzleBoard(),
-    );
-  }
+  _PuzzleGameState createState() => _PuzzleGameState();
 }
 
-class PuzzleBoard extends StatefulWidget {
-  @override
-  _PuzzleBoardState createState() => _PuzzleBoardState();
-}
+class _PuzzleGameState extends State<PuzzleGame> {
+  List<int> arr = List.generate(16, (index) => index)..shuffle();
 
-class _PuzzleBoardState extends State<PuzzleBoard> {
-  late List<int> puzzleTiles;
-  late int emptyIndex;
-
-  @override
-  void initState() {
-    super.initState();
-    startGame();
+  void restartGame() {
+    setState(() {
+      arr.shuffle();
+    });
   }
 
-  void startGame() {
-    puzzleTiles = List.generate(16, (index) => index);
-    emptyIndex = 15;
-    shuffleTiles();
-  }
-
-  void shuffleTiles() {
-    final random = Random();
-    for (int i = puzzleTiles.length - 1; i > 0; i--) {
-      int n = random.nextInt(i + 1);
-      int temp = puzzleTiles[i];
-      puzzleTiles[i] = puzzleTiles[n];
-      puzzleTiles[n] = temp;
-    }
-    setState(() {});
-  }
-
-  void moveTile(int index) {
-    if ((index - 1 == emptyIndex && (index % 4 != 0)) ||
-        (index + 1 == emptyIndex && (emptyIndex % 4 != 0)) ||
-        index - 4 == emptyIndex ||
-        index + 4 == emptyIndex) {
-      int temp = puzzleTiles[index];
-      puzzleTiles[index] = puzzleTiles[emptyIndex];
-      puzzleTiles[emptyIndex] = temp;
-      emptyIndex = index;
-      checkGameComplete();
-      setState(() {});
-    }
-  }
-
-  void checkGameComplete() {
-    bool isComplete = true;
-    for (int i = 0; i < puzzleTiles.length - 1; i++) {
-      if (puzzleTiles[i] != i) {
-        isComplete = false;
-        break;
-      }
-    }
-    if (isComplete) {
+  void checkWin() {
+    if (arr.asMap().entries.every((entry) => entry.key == entry.value)) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Congratulations!'),
-            content: Text('You solved the puzzle!'),
-            actions: [
-              TextButton(
+            title: const Text('Congratulations!'),
+            content: const Text('You have successfully completed the puzzle!'),
+            actions: <Widget>[
+              ElevatedButton(
+                child: const Text('Play Again'),
                 onPressed: () {
                   Navigator.of(context).pop();
-                  startGame();
+                  restartGame();
                 },
-                child: Text('Play Again'),
               ),
             ],
           );
@@ -94,29 +46,39 @@ class _PuzzleBoardState extends State<PuzzleBoard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Puzzle Game'),
-      ),
+      appBar: AppBar(title: const Text('Puzzle Game')),
       body: GridView.builder(
         itemCount: 16,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-        ),
-        itemBuilder: (BuildContext context, int index) {
-          return GestureDetector(
-            onTap: () {
-              moveTile(index);
-            },
-            child: Container(
-              margin: EdgeInsets.all(4),
-              color:
-                  puzzleTiles[index] == 15 ? Colors.transparent : Colors.blue,
-              child: Center(
-                child: Text(
-                  '${puzzleTiles[index]}',
-                  style: TextStyle(fontSize: 24, color: Colors.white),
-                ),
-              ),
+        gridDelegate:
+            const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4),
+        itemBuilder: (context, index) {
+          return Draggable<int>(
+            data: arr[index],
+            feedback: Container(
+              width: 80,
+              height: 80,
+              alignment: Alignment.center,
+              child: Image.asset('assets/imageonline/card${arr[index]}.png'),
+            ),
+            childWhenDragging: Container(),
+            child: DragTarget<int>(
+              builder: (context, candidateData, rejectedData) {
+                return Container(
+                  alignment: Alignment.center,
+                  margin: const EdgeInsets.all(2),
+                  child:
+                      Image.asset('assets/imageonline/card${arr[index]}.png'),
+                );
+              },
+              onWillAcceptWithDetails: (data) => true,
+              onAcceptWithDetails: (data) {
+                setState(() {
+                  int dataIndex = arr.indexOf(data.data);
+                  arr[dataIndex] = arr[index];
+                  arr[index] = data.data;
+                  checkWin();
+                });
+              },
             ),
           );
         },
