@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MaterialApp(home: PuzzleGame()));
+  runApp(MaterialApp(
+    home: PuzzleGame(),
+  ));
 }
 
 class PuzzleGame extends StatefulWidget {
@@ -21,7 +23,14 @@ class _PuzzleGameState extends State<PuzzleGame> {
   }
 
   void checkWin() {
-    if (arr.asMap().entries.every((entry) => entry.key == entry.value)) {
+    bool isWin = true;
+    for (int i = 0; i < arr.length; i++) {
+      if (arr[i] != i) {
+        isWin = false;
+        break;
+      }
+    }
+    if (isWin) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -49,8 +58,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
       appBar: AppBar(title: const Text('Puzzle Game')),
       body: GridView.builder(
         itemCount: 16,
-        gridDelegate:
-            const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4),
         itemBuilder: (context, index) {
           return Draggable<int>(
             data: arr[index],
@@ -66,16 +74,15 @@ class _PuzzleGameState extends State<PuzzleGame> {
                 return Container(
                   alignment: Alignment.center,
                   margin: const EdgeInsets.all(2),
-                  child:
-                      Image.asset('assets/imageonline/card${arr[index]}.png'),
+                  child: Image.asset('assets/imageonline/card${arr[index]}.png'),
                 );
               },
-              onWillAcceptWithDetails: (data) => true,
-              onAcceptWithDetails: (data) {
+              onWillAccept: (data) => true,
+              onAccept: (data) {
                 setState(() {
-                  int dataIndex = arr.indexOf(data.data);
+                  int dataIndex = arr.indexOf(data!);
                   arr[dataIndex] = arr[index];
-                  arr[index] = data.data;
+                  arr[index] = data;
                   checkWin();
                 });
               },
